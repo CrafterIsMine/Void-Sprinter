@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Void Sprinter</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<canvas id="g"></canvas>
+<div class="ui">
+<h1 class="core">Void Sprinter</h1>
+<p class="tagline">Moving shall be your key to survival!</p>
+<div class="hud">
+<div class="stat">
+<span class="txt">score</span>
+<span id="s">0</span>
+</div>
+<div class="stat">
+<span class="txt">multi</span>
+<span id="m">x1</span>
+</div>
+<div class="stat">
+<span class="txt">best</span>
+<span id="h">0</span>
+</div>
+</div>
+<div class="ctrl" id="menu">
+<div class="bar-wrap">
+<span class="txt">dash charge</span>
+<div class="bar"><div id="dashbar" class="bar-fill"></div></div>
+</div>
+<div class="keys">
+<span class="txt">[WASD] drift</span>
+<span class="txt">[SPACE] dash</span>
+</div>
+<button class="btn" onclick="boot()">jack in</button>
+</div>
+<div class="ctrl hidden" id="gameover">
+<h2 class="over">connection severed</h2>
+<p class="final">score: <span id="fs">0</span> | best: <span id="fh">0</span></p>
+<button class="btn" onclick="boot()">retry</button>
+</div>
+</div>
+<script src="fx.js"></script>
+<script src="entities.js"></script>
+<script src="core.js"></script>
+</body>
+</html>
