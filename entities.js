@@ -27,18 +27,19 @@ let edge = Math.floor(Math.random() * 4)
 let fx, fy
 let margin = 50
 if(edge === 0){
-fx = margin + Math.random() * (canvas.width - margin * 2); fy = -margin 
+fx = margin + Math.random() * (canvas.width - margin * 2); fy = -margin
 }
 else if(edge === 1){
 fx = canvas.width + margin; fy = margin + Math.random() * (canvas.height - margin * 2) 
-    }
-else if(edge === 2){
+}
+else if(edge === 2){ 
 fx = margin + Math.random() * (canvas.width - margin * 2); fy = canvas.height + margin 
 }
 else{
 fx = -margin; fy = margin + Math.random() * (canvas.height - margin * 2) 
 }
-
+let diff = Math.min(pts / 800, 1)
+let tp = Math.random()
 let f={
 x: fx,
 y: fy,
@@ -49,16 +50,23 @@ type: 'chaser',
 hp: 1
 }
 
-if(Math.random() > 0.6){
+if(tp < 0.4 + diff * 0.3){
+f.type = 'chaser'
+f.r = 10
+}
+else if(tp < 0.75 + diff * 0.1){
+f.type = 'shooter'
+f.r = 12
+f.shootCd = 60 + Math.random() * 60
+}
+else{
 f.type = 'drifter'
 f.vx = (Math.random() - 0.5) * 4
 f.vy = (Math.random() - 0.5) * 4
 f.r = 8
 }
-
 foes.push(f)
 }
-
 function updateEntities(){
 if(dead)
 return
@@ -66,9 +74,13 @@ if(gracePeriod > 0){
 gracePeriod--
 }
 spawnCounter++
-let spawnDelay = Math.max(40, 120 - Math.floor(pts / 40))
+let spawnDelay = Math.max(25, 100 - Math.floor(pts / 40))
 if(spawnCounter >= spawnDelay){
 spawnCounter = 0
+spawnFoe()
+if(pts > 400 && Math.random() > 0.4)
+spawnFoe()
+if(pts > 1200 && Math.random() > 0.6)
 spawnFoe()
 }
 
@@ -87,7 +99,6 @@ if(ax !== 0 && ay !== 0){
 ax *= 0.707
 ay *= 0.707
 }
-
 let accel = p.dashTime > 0 ? 0.8 : 0.35
 p.vx += ax * accel
 p.vy += ay * accel
@@ -100,10 +111,8 @@ if(spd > maxSpd){
 p.vx = (p.vx / spd) * maxSpd
 p.vy = (p.vy / spd) * maxSpd
 }
-
 p.x += p.vx
 p.y += p.vy
-
 if(p.x < p.r)
 p.x = p.r
 if(p.x > canvas.width - p.r)
@@ -119,7 +128,6 @@ trails.push({ x: p.x, y: p.y, r: p.r + 4, col: '#ffff00', life: 1.0 })
 if(p.dashTime % 2 === 0)
 burst(p.x, p.y, '#ffff00', 2, 2)
 }
-
 if(p.invuln > 0)
 p.invuln--
 if(dashCd > 0)
@@ -138,6 +146,7 @@ burst(p.x, p.y, '#ffff00', 20, 5)
 shake = 6
 sfxDash()
 }
+
 for(let i = orbs.length - 1; i >= 0; i--){
 let o = orbs[i]
 o.pulse += 0.08
@@ -165,7 +174,8 @@ shake = 4
 sfxCollect()
 spawnOrb()
  }
-}
+} 
+
 for(let i = foes.length - 1; i >= 0; i--){
 let f = foes[i]
 if(f.type === 'chaser'){
@@ -177,13 +187,30 @@ f.vx += (dx / dist) * 0.08
 f.vy += (dy / dist) * 0.08
 }
 let fspd = Math.sqrt(f.vx * f.vx + f.vy * f.vy)
-if(fspd > 3.2){
-f.vx = (f.vx / fspd) * 3.2
-f.vy = (f.vy / fspd) * 3.2
+if(fspd > 3.2 + (pts / 1000)){
+f.vx = (f.vx / fspd) * (3.2 + (pts / 1000))
+f.vy = (f.vy / fspd) * (3.2 + (pts / 1000))
+ }
+}
+else if(f.type === 'shooter'){
+f.shootCd--
+if(f.shootCd <= 0){
+f.shootCd = Math.max(40, 90 - Math.floor(pts / 50)) + Math.random() * 40
+let dx = p.x - f.x
+let dy = p.y - f.y
+let dist = Math.sqrt(dx * dx + dy * dy)
+if(dist > 0){
+parts.push({
+x: f.x, y: f.y,
+vx: (dx / dist) * 5, vy: (dy / dist) * 5,
+life: 1.0, decay: 0.008, col: '#ff3355', size: 4
+ })
+}
  }
 }
 f.x += f.vx
 f.y += f.vy
+
 if(f.x < -50 || f.x > canvas.width + 50)
 f.vx *= -1
 if(f.y < -50 || f.y > canvas.height + 50)
@@ -191,6 +218,21 @@ f.vy *= -1
 let dx = p.x - f.x
 let dy = p.y - f.y
 let dist = Math.sqrt(dx * dx + dy * dy)
+
+if(p.dashTime > 0 && dist < p.r + f.r + 10){
+foes.splice(i, 1)
+burst(f.x, f.y, '#ff3355', 25, 6)
+shake = 10
+pts += 50 * mult
+document.getElementById('s').innerText = Math.floor(pts)
+if(pts > hi){
+hi = pts
+localStorage.setItem('dv_hi', Math.floor(hi))
+document.getElementById('h').innerText = Math.floor(hi)
+ }
+sfxKill()
+continue
+}
 if(dist < p.r + f.r && p.invuln <= 0 && gracePeriod <= 0){
 dead = true
 shake = 25
@@ -198,8 +240,9 @@ burst(p.x, p.y, '#00e5ff', 50, 8)
 burst(p.x, p.y, '#ff3355', 30, 6)
 sfxDie()
 showGameOver()
- }
+ } 
 }
+
 if(mult > 1){
 mult -= 0.01
 if(mult < 1)
@@ -207,11 +250,13 @@ mult = 1
 document.getElementById('m').innerText = 'x' + Math.floor(mult)
  }
 }
+
 function renderEntities(){
 ctx.save()
 if(shake > 0){
 ctx.translate((Math.random() - 0.5) * shake, (Math.random() - 0.5) * shake)
 }
+
 ctx.fillStyle = '#ff00aa'
 for(let o of orbs){
 let r = o.r + Math.sin(o.pulse) * 2
@@ -219,12 +264,18 @@ ctx.beginPath()
 ctx.arc(o.x, o.y, r, 0, Math.PI * 2)
 ctx.fill()
 }
+
 for(let f of foes){
 let col = f.type === 'chaser' ? '#ff3355' : '#ffaa00'
 ctx.fillStyle = col
+if(f.type === 'shooter'){
+ctx.fillRect(f.x - f.r, f.y - f.r, f.r * 2, f.r * 2)
+}
+else{
 ctx.beginPath()
 ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2)
 ctx.fill()
+ }
 }
 let pcol = p.dashTime > 0 ? '#ffff00' : '#00e5ff'
 ctx.fillStyle = pcol
